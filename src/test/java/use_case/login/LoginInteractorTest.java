@@ -6,23 +6,17 @@ import entity.User;
 import entity.UserFactory;
 import org.junit.Test;
 
-import java.time.LocalDateTime;
-
 import static org.junit.Assert.*;
 
 public class LoginInteractorTest {
 
-    // TODO Task 2.2: make a copy of this test method and follow the instructions in the readme to test your
-    //                code from Task 2.1..
     @Test
     public void successTest() {
         LoginInputData inputData = new LoginInputData("Paul", "password");
         LoginUserDataAccessInterface userRepository = new InMemoryUserDataAccessObject();
 
         // For the success test, we need to add Paul to the data access repository before we log in.
-        UserFactory factory = new CommonUserFactory();
-        User user = factory.create("Paul", "password");
-        userRepository.save(user);
+        extracted(userRepository);
 
         // This creates a successPresenter that tests whether the test case is as we expect.
         LoginOutputBoundary successPresenter = new LoginOutputBoundary() {
@@ -41,6 +35,38 @@ public class LoginInteractorTest {
         interactor.execute(inputData);
     }
 
+    @Test
+    public void successUserLoggedInTest() {
+        LoginInputData inputData = new LoginInputData("Paul", "password");
+        LoginUserDataAccessInterface userRepository = new InMemoryUserDataAccessObject();
+
+        // For the success test, we need to add Paul to the data access repository before we log in.
+        extracted(userRepository);
+
+        // This creates a successPresenter that tests whether the test case is as we expect.
+        LoginOutputBoundary successPresenter = new LoginOutputBoundary() {
+            @Override
+            public void prepareSuccessView(LoginOutputData user) {
+                assertEquals("Paul", userRepository.getCurrentUser());
+            }
+
+            @Override
+            public void prepareFailView(String error) {
+                fail("Use case failure is unexpected.");
+            }
+        };
+
+        LoginInputBoundary interactor = new LoginInteractor(userRepository, successPresenter);
+        assertNull(userRepository.getCurrentUser());
+        interactor.execute(inputData);
+    }
+
+    private static void extracted(LoginUserDataAccessInterface userRepository) {
+        UserFactory factory = new CommonUserFactory();
+        User user = factory.create("Paul", "password");
+        userRepository.save(user);
+    }
+
 
     @Test
     public void failurePasswordMismatchTest() {
@@ -49,9 +75,7 @@ public class LoginInteractorTest {
 
         // For this failure test, we need to add Paul to the data access repository before we log in, and
         // the passwords should not match.
-        UserFactory factory = new CommonUserFactory();
-        User user = factory.create("Paul", "password");
-        userRepository.save(user);
+        extracted(userRepository);
 
         // This creates a presenter that tests whether the test case is as we expect.
         LoginOutputBoundary failurePresenter = new LoginOutputBoundary() {
